@@ -8,17 +8,11 @@ import {
   Plus, 
   ArrowUpRight, 
   ArrowDownLeft,
-  Calendar,
-  MoreVertical,
-  ChevronDown,
   Clock,
   MapPin,
-  CheckCircle2,
-  XCircle,
   History,
   Info
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import StatsCard from "@/components/cards/stats-card";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Users, Search, Filter, ArrowUpRight, ArrowDownLeft, Clock, Calendar, Edit2, Trash2 } from "lucide-react";
+import { Users, Search, Filter, ArrowUpRight, ArrowDownLeft, Clock, Edit2, Trash2 } from "lucide-react";
 
 export default function VisitorLogPage() {
   return (

@@ -6,14 +6,12 @@ import {
   UserPlus, 
   Search, 
   Filter, 
-  MoreVertical, 
   CheckCircle2, 
   XCircle, 
   Mail, 
   Phone,
   Building2,
   Calendar,
-  ChevronDown,
   Edit2,
   Trash2
 } from "lucide-react";

@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Search, Bell, Plus, User, Menu } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function Header() {
   return (

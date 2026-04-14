@@ -7,15 +7,10 @@ import {
   ShieldCheck,
   CreditCard,
   Bell,
-  Users,
   Globe,
   Lock,
-  Mail,
   Save,
-  Camera,
-  CheckCircle2,
-  ChevronRight,
-  Info
+  Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
