@@ -45,7 +45,7 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{greeting}, Admin</h1>
-        <p className="text-slate-500 mt-1">Here's what's happening in <span className="text-primary font-semibold">SocietyConnect</span> today.</p>
+        <p className="text-slate-500 mt-1">Here&apos;s what&apos;s happening in <span className="text-primary font-semibold">SocietyConnect</span> today.</p>
       </div>
 
       {/* Stats Grid */}

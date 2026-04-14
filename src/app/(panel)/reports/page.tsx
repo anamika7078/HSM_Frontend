@@ -4,27 +4,23 @@ import React, { useState } from "react";
 import { 
   BarChart3, 
   TrendingUp, 
-  TrendingDown, 
   Download, 
   Calendar, 
   Filter, 
   FileText, 
-  PieChart, 
   ArrowUpRight, 
-  ArrowDownRight,
   ShieldCheck,
   MessageSquare,
   Users,
   IndianRupee,
   ChevronRight,
-  Info
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import StatsCard from "@/components/cards/stats-card";
 
 export default function ReportsPage() {
-  const [dateRange, setDateRange] = useState("Last 30 Days");
+  const [dateRange] = useState("Last 30 Days");
 
   const reports = [
     { id: "1", title: "Monthly Maintenance Report", type: "Financial", date: "Apr 2024", size: "1.2 MB" },

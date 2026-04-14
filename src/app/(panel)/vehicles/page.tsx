@@ -6,7 +6,6 @@ import {
   Search, 
   Filter, 
   Plus, 
-  ArrowUpRight, 
   ArrowDownLeft,
   Clock,
   MapPin,

@@ -9,15 +9,12 @@ import {
   ShieldCheck, 
   Users, 
   Briefcase,
-  MoreVertical,
-  Mail,
   Phone,
   Calendar,
   ChevronDown,
   Edit2,
   Trash2,
   CheckCircle2,
-  Clock,
   Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";

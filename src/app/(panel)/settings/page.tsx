@@ -5,7 +5,6 @@ import {
   Settings,
   Building2,
   ShieldCheck,
-  CreditCard,
   Bell,
   Globe,
   Lock,
@@ -36,7 +35,7 @@ export default function SettingsPage() {
           </div>
           System Settings
         </h1>
-        <p className="text-slate-500 mt-1">Configure your society's global preferences and security protocols.</p>
+        <p className="text-slate-500 mt-1">Configure your society&apos;s global preferences and security protocols.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
