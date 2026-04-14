@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CreditCard, IndianRupee, Download, FileText, Send, Plus, Edit2, Trash2 } from "lucide-react";
+import { CreditCard, Download, FileText, Send, Plus, Edit2, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default function BillingPage() {
