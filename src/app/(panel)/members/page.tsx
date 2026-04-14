@@ -23,6 +23,17 @@ import StatsCard from "@/components/cards/stats-card";
 
 type Tab = "requests" | "all";
 
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  flatNumber: string;
+  wing: string;
+  status: string;
+  createdAt: string;
+}
+
 const mockMembers = [
   { id: "1", name: "Amit Sharma", email: "amit.s@example.com", phone: "+91 98765 43210", flatNumber: "101", wing: "A", status: "APPROVED", createdAt: "2024-01-15" },
   { id: "2", name: "Priya Patel", email: "priya.p@example.com", phone: "+91 87654 32109", flatNumber: "402", wing: "B", status: "APPROVED", createdAt: "2024-02-10" },
@@ -44,9 +55,9 @@ export default function MembersPage() {
     queryKey: ["members"],
     queryFn: async () => {
       try {
-        const response: any = await membersApi.getAll();
+        const response = await membersApi.getAll();
         // Handle different API response structures
-        const data = response.data || (Array.isArray(response) ? response : []);
+        const data = (response as { data?: Member[] }).data || (Array.isArray(response) ? response : []);
         return data.length > 0 ? data : mockMembers;
       } catch (error) {
         console.error("Error fetching members:", error);
@@ -60,8 +71,8 @@ export default function MembersPage() {
     queryKey: ["member-requests"],
     queryFn: async () => {
       try {
-        const response: any = await membersApi.getRequests();
-        const data = response.data || (Array.isArray(response) ? response : []);
+        const response = await membersApi.getRequests();
+        const data = (response as { data?: Member[] }).data || (Array.isArray(response) ? response : []);
         return data.length > 0 ? data : mockRequests;
       } catch (error) {
         console.error("Error fetching requests:", error);
@@ -92,7 +103,7 @@ export default function MembersPage() {
   const displayData = activeTab === "all" ? members : requests;
   const isLoading = activeTab === "all" ? isLoadingMembers : isLoadingRequests;
 
-  const filteredData = displayData?.filter((item: any) => 
+  const filteredData = (displayData as Member[])?.filter((item: Member) => 
     item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.flatNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -128,7 +139,7 @@ export default function MembersPage() {
           value={requests?.length?.toString() || "0"} 
           icon={UserPlus} 
           color="bg-orange-100 text-orange-600"
-          badge={{ text: requests?.length > 0 ? "Action Required" : "Up to date", variant: "pending" }}
+          badge={{ text: (requests?.length ?? 0) > 0 ? "Action Required" : "Up to date", variant: "pending" }}
         />
         <StatsCard 
           title="Recent Joins" 
@@ -163,7 +174,7 @@ export default function MembersPage() {
                 )}
               >
                 Requests
-                {requests?.length > 0 && (
+                {requests && requests.length > 0 && (
                   <span className="w-5 h-5 flex items-center justify-center bg-orange-500 text-white text-[10px] rounded-full">
                     {requests.length}
                   </span>
@@ -213,7 +224,7 @@ export default function MembersPage() {
                     </tr>
                   ))
                 ) : filteredData?.length > 0 ? (
-                  filteredData.map((member: any) => (
+                  filteredData.map((member: Member) => (
                     <motion.tr 
                       layout
                       initial={{ opacity: 0 }}
@@ -311,7 +322,7 @@ export default function MembersPage() {
                         </div>
                         <div className="space-y-1">
                           <p className="text-slate-900 font-bold">No members found</p>
-                          <p className="text-slate-500 text-sm">We couldn't find any members matching your criteria.</p>
+                          <p className="text-slate-500 text-sm">We couldn&apos;t find any members matching your criteria.</p>
                         </div>
                         <button 
                           onClick={() => {setSearchQuery(""); setActiveTab("all")}}
