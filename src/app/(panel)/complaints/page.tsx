@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, Filter, MessageSquare, Clock, CheckCircle2, AlertCircle, Edit2, Trash2 } from "lucide-react";
+import { MessageSquare, Clock, CheckCircle2, AlertCircle, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const statusStyles = {
