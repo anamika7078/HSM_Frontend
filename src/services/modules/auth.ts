@@ -1,7 +1,7 @@
 import api from "../api";
 
 export const authApi = {
-  login: async (credentials: any) => {
+  login: async (credentials: Record<string, unknown>) => {
     // For demo purposes, we'll mock a successful login if no actual backend is ready
     // return api.post("/auth/login", credentials);
     

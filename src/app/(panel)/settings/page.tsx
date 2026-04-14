@@ -28,7 +28,6 @@ export default function SettingsPage() {
   const tabs = [
     { id: "society", label: "Society Profile", icon: Building2 },
     { id: "security", label: "Security & Access", icon: ShieldCheck },
-
     { id: "notifications", label: "Notifications", icon: Bell },
   ];
 
