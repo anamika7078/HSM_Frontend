@@ -51,7 +51,7 @@ export const visitorsApi = {
   },
 
   // Create visitor request (member/security)
-  createRequest: async (data: any) => {
+  createRequest: async (data: unknown) => {
     return apiClient.post('/visitors/request', data);
   },
 
@@ -75,7 +75,7 @@ export const visitorsApi = {
     return apiClient.post(`/visitors/${id}/check-out`);
   },
 
-  update: async (id: number, data: any) => {
+  update: async (id: number, data: unknown) => {
     return apiClient.put(`/visitors/${id}`, data);
   },
 

@@ -209,7 +209,7 @@ export default function FlatsPage() {
         />
         <StatsCard 
           title="Vacant Units" 
-          value={(societyStats?.total_flats - societyStats?.occupied_flats) || "0"} 
+          value={String((societyStats?.total_flats - societyStats?.occupied_flats) || 0)} 
           icon={ShieldAlert} 
           color="bg-rose-100 text-rose-600"
         />

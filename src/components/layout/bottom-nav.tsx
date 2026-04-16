@@ -6,15 +6,10 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import {
   LayoutDashboard,
-  Users,
-  Building,
-  Shield,
   UserCheck,
-  FileText,
   Bell,
   MessageSquare,
   CreditCard,
-  Settings,
 } from 'lucide-react';
 
 const bottomNavigation = [

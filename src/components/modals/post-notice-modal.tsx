@@ -38,8 +38,9 @@ export default function PostNoticeModal({ isOpen, onClose }: PostNoticeModalProp
       setSendTo('all');
       setMessage('');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to post notice');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err?.response?.data?.message || 'Failed to post notice');
     }
   });
 

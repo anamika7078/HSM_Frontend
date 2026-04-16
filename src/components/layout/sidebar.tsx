@@ -11,7 +11,6 @@ import {
   Shield,
   UserCheck,
   FileText,
-  Bell,
   MessageSquare,
   CreditCard,
   Settings,
