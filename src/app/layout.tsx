@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/providers/query-provider";
 
+import { Toaster } from "react-hot-toast";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -20,6 +22,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased selection:bg-primary/20`}>
         <QueryProvider>
           {children}
+          <Toaster position="top-right" />
         </QueryProvider>
       </body>
     </html>

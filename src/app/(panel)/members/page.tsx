@@ -17,9 +17,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
+import { authApi } from "@/services/modules/auth";
 import { membersApi } from "@/services/modules/members";
 import { cn } from "@/lib/utils";
 import StatsCard from "@/components/cards/stats-card";
+import toast from "react-hot-toast";
 
 type Tab = "requests" | "all";
 
@@ -27,41 +29,47 @@ interface Member {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  flatNumber: string;
-  wing: string;
-  status: string;
-  createdAt: string;
+  mobile?: string;
+  phone?: string;
+  flatNumber?: string;
+  flat_number?: string;   // snake_case alias from API
+  wing?: string;
+  wing_name?: string;
+  society_name?: string;
+  is_verified?: boolean;
+  status?: string;
+  createdAt?: string;
+  created_at?: string;
 }
-
-const mockMembers = [
-  { id: "1", name: "Amit Sharma", email: "amit.s@example.com", phone: "+91 98765 43210", flatNumber: "101", wing: "A", status: "APPROVED", createdAt: "2024-01-15" },
-  { id: "2", name: "Priya Patel", email: "priya.p@example.com", phone: "+91 87654 32109", flatNumber: "402", wing: "B", status: "APPROVED", createdAt: "2024-02-10" },
-  { id: "3", name: "Suresh Raina", email: "suresh.r@example.com", phone: "+91 76543 21098", flatNumber: "205", wing: "C", status: "APPROVED", createdAt: "2024-03-05" },
-  { id: "4", name: "Anjali Gupta", email: "anjali.g@example.com", phone: "+91 65432 10987", flatNumber: "303", wing: "A", status: "APPROVED", createdAt: "2024-03-12" },
-  { id: "5", name: "Vikram Singh", email: "vikram.s@example.com", phone: "+91 54321 09876", flatNumber: "501", wing: "D", status: "APPROVED", createdAt: "2024-04-01" },
-];
-
-const mockRequests = [
-  { id: "req1", name: "Rajesh Kumar", email: "rajesh.k@example.com", phone: "+91 99988 77766", flatNumber: "202", wing: "B", status: "PENDING", createdAt: "2024-04-12" },
-  { id: "req2", name: "Sneha Reddy", email: "sneha.r@example.com", phone: "+91 88877 66655", flatNumber: "105", wing: "A", status: "PENDING", createdAt: "2024-04-13" },
-];
 
 export default function MembersPage() {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newMember, setNewMember] = useState({ name: "", email: "", mobile: "", password: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: members, isLoading: isLoadingMembers } = useQuery({
+  // Edit state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", mobile: "" });
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+
+  // Delete state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { data: members, isLoading: isLoadingMembers, refetch: refetchMembers } = useQuery({
     queryKey: ["members"],
     queryFn: async () => {
       try {
-        const response = await membersApi.getAll();
-        // Handle different API response structures
-        const data = (response as { data?: Member[] }).data || (Array.isArray(response) ? response : []);
-        return data.length > 0 ? data : mockMembers;
+        const response: any = await membersApi.getAll();
+        return response?.data?.members || [];
       } catch (error) {
         console.error("Error fetching members:", error);
-        return mockMembers;
+        toast.error("Failed to load members");
+        return [];
       }
     },
     enabled: activeTab === "all"
@@ -71,12 +79,12 @@ export default function MembersPage() {
     queryKey: ["member-requests"],
     queryFn: async () => {
       try {
-        const response = await membersApi.getRequests();
-        const data = (response as { data?: Member[] }).data || (Array.isArray(response) ? response : []);
-        return data.length > 0 ? data : mockRequests;
+        const response: any = await membersApi.getAll({ status: 'unverified' }); // using 'unverified' based on backend API logic
+        return response?.data?.members || [];
       } catch (error) {
         console.error("Error fetching requests:", error);
-        return mockRequests;
+        toast.error("Failed to load requests");
+        return [];
       }
     },
     enabled: activeTab === "requests"
@@ -84,19 +92,115 @@ export default function MembersPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await membersApi.approve(id);
+      await membersApi.approve(Number(id), {});
+      toast.success("Member approved successfully");
       refetchRequests();
     } catch (error) {
       console.error("Error approving member:", error);
+      toast.error("Failed to approve member");
     }
   };
 
   const handleReject = async (id: string) => {
     try {
-      await membersApi.reject(id);
+      await membersApi.reject(Number(id), { reason: "Rejected by committee" });
+      toast.success("Member rejected successfully");
       refetchRequests();
     } catch (error) {
       console.error("Error rejecting member:", error);
+      toast.error("Failed to reject member");
+    }
+  };
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMember.name || !newMember.mobile || !newMember.password) {
+      toast.error("Please fill in required fields: Name, Mobile, and Password");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload: any = {
+        name: newMember.name,
+        mobile: newMember.mobile,
+        password: newMember.password,
+        role: "member"
+      };
+
+      if (newMember.email.trim() !== "") {
+        payload.email = newMember.email;
+      }
+
+      await authApi.registerUser(payload);
+      toast.success("Member added successfully");
+      setIsAddModalOpen(false);
+      setNewMember({ name: "", email: "", mobile: "", password: "" });
+      if (activeTab === "all") refetchMembers();
+      else refetchRequests();
+    } catch (error: any) {
+      console.error("Error adding member:", error);
+      toast.error(error?.response?.data?.message || "Failed to add member");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = (member: Member) => {
+    setEditingMember(member);
+    setEditForm({
+      name: member.name || "",
+      email: member.email || "",
+      mobile: member.mobile || member.phone || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    if (!editForm.name || !editForm.mobile) {
+      toast.error("Name and Mobile are required");
+      return;
+    }
+    setIsEditSubmitting(true);
+    try {
+      await membersApi.update(Number(editingMember.id), {
+        name: editForm.name,
+        email: editForm.email || undefined,
+        mobile: editForm.mobile,
+      });
+      toast.success("Member updated successfully");
+      setIsEditModalOpen(false);
+      setEditingMember(null);
+      refetchMembers();
+    } catch (error: any) {
+      console.error("Error updating member:", error);
+      toast.error(error?.response?.data?.message || "Failed to update member");
+    } finally {
+      setIsEditSubmitting(false);
+    }
+  };
+
+  const handleOpenDelete = (member: Member) => {
+    setDeletingMember(member);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteMember = async () => {
+    if (!deletingMember) return;
+    setIsDeleting(true);
+    try {
+      await membersApi.delete(Number(deletingMember.id));
+      toast.success("Member deleted successfully");
+      setIsDeleteModalOpen(false);
+      setDeletingMember(null);
+      refetchMembers();
+    } catch (error: any) {
+      console.error("Error deleting member:", error);
+      toast.error(error?.response?.data?.message || "Failed to delete member");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -105,7 +209,7 @@ export default function MembersPage() {
 
   const filteredData = (displayData as Member[])?.filter((item: Member) => 
     item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.flatNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (item.flatNumber || item.flat_number || "")?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -118,7 +222,10 @@ export default function MembersPage() {
           <p className="text-slate-500 mt-1">Review registration requests and manage society residents.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl font-semibold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+          >
             <UserPlus className="w-4 h-4" />
             Add Member
           </button>
@@ -240,14 +347,14 @@ export default function MembersPage() {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{member.name || "N/A"}</p>
-                            <p className="text-xs text-slate-400 font-medium">Joined {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "Recently"}</p>
+                            <p className="text-xs text-slate-400 font-medium">Joined {member.createdAt || member.created_at ? new Date(member.createdAt || member.created_at!).toLocaleDateString() : "Recently"}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-center">
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl">
                           <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="text-sm font-bold text-slate-700">{member.wing || "W"} - {member.flatNumber || "000"}</span>
+                          <span className="text-sm font-bold text-slate-700">{member.wing_name || member.wing || "W"} - {member.flatNumber || member.flat_number || "000"}</span>
                         </div>
                       </td>
                       <td className="px-8 py-6">
@@ -258,7 +365,7 @@ export default function MembersPage() {
                           </div>
                           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                             <Phone className="w-3.5 h-3.5" />
-                            {member.phone}
+                            {member.mobile || member.phone}
                           </div>
                         </div>
                       </td>
@@ -266,11 +373,11 @@ export default function MembersPage() {
                         <div className="flex justify-center">
                           <span className={cn(
                             "px-3 py-1.5 rounded-full text-[10px] font-bold border",
-                            member.status === 'APPROVED' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                            member.status === 'PENDING' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                            member.is_verified ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                            !member.is_verified ? "bg-amber-50 text-amber-600 border-amber-100" :
                             "bg-rose-50 text-rose-600 border-rose-100"
                           )}>
-                            {member.status || "UNKNOWN"}
+                            {member.is_verified ? "APPROVED" : "PENDING"}
                           </span>
                         </div>
                       </td>
@@ -296,12 +403,14 @@ export default function MembersPage() {
                           ) : (
                             <div className="flex items-center justify-end gap-2">
                               <button 
+                                onClick={() => handleOpenEdit(member)}
                                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
                                 title="Edit Member"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
                               <button 
+                                onClick={() => handleOpenDelete(member)}
                                 className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                 title="Delete Member"
                               >
@@ -367,6 +476,231 @@ export default function MembersPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Member Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Add New Member</h3>
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddMember} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={newMember.name}
+                    onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Enter member's full name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Mobile Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={newMember.mobile}
+                    onChange={(e) => setNewMember({ ...newMember, mobile: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Enter mobile number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    value={newMember.email}
+                    onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Initial Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={newMember.password}
+                    onChange={(e) => setNewMember({ ...newMember, password: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Create a password"
+                  />
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="flex-1 px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-3 text-white font-bold bg-primary hover:bg-primary/90 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Adding..." : "Add Member"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Member Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && editingMember && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Edit Member</h3>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditMember} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Full name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Mobile Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={editForm.mobile}
+                    onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Mobile number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                    placeholder="Email address"
+                  />
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="flex-1 px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isEditSubmitting}
+                    className="flex-1 px-4 py-3 text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {isEditSubmitting ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && deletingMember && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl"
+            >
+              <div className="flex flex-col items-center gap-4 mb-6">
+                <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center">
+                  <Trash2 className="w-8 h-8 text-rose-500" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-xl font-bold text-slate-900">Delete Member</h3>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Are you sure you want to delete <span className="font-bold text-slate-800">{deletingMember.name}</span>? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteMember}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 text-white font-bold bg-rose-600 hover:bg-rose-700 rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
