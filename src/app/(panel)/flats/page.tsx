@@ -53,7 +53,7 @@ export default function FlatsPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [wingsRes, flatsRes, societyRes] = await Promise.all([
+      const [wingsRes, flatsRes, societyRes]: any[] = await Promise.all([
         flatsApi.getWings(),
         flatsApi.getFlats(),
         societyApi.getDetails()
